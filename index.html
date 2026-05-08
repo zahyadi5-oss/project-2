@@ -7,7 +7,7 @@
   <h1>Data dari ESP8266</h1>
 
   <p>Nilai sensor:</p>
-  <h2 id="data">Menunggu data...</h2>
+  <h2 id="data">Menunggu data 2...</h2>
 
   <!-- MQTT.js -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -15,7 +15,7 @@
   <script>
     // === 1. KONEKSI KE MQTT BROKER VIA WEBSOCKET ===
     // Contoh broker publik (untuk testing)
-    const client = mqtt.connect("ws:/broker.hivemq.com:8000");
+    const client = mqtt.connect("ws:/broker.emqx.io:8083");
 
   client.on("connect", () => {
   console.log("CONNECTED");
