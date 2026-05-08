@@ -1,10 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Project 2</title>
+  <title>ESP8266 MQTT Monitor</title>
 </head>
 <body>
-  <h1>Halo Project 2 🚀</h1>
-  <p>Ini sudah diperbaiki</p>
+  <h1>Data dari ESP8266</h1>
+
+  <p>Nilai sensor:</p>
+  <h2 id="data">Menunggu data...</h2>
+
+  <!-- MQTT.js -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+  <script>
+    // === 1. KONEKSI KE MQTT BROKER VIA WEBSOCKET ===
+    // Contoh broker publik (untuk testing)
+    const broker = "wss://test.mosquitto.org:8081";
+
+    const client = mqtt.connect(broker);
+
+    // === 2. TOPIC YANG DI-SUBSCRIBE ===
+    const topic = "esp8266/sensor";
+
+    client.on("connect", function () {
+      console.log("Terhubung ke MQTT");
+      client.subscribe(topic);
+    });
+
+    // === 3. TERIMA DATA ===
+    client.on("message", function (topic, message) {
+      document.getElementById("data").innerText = message.toString();
+    });
+  </script>
 </body>
 </html>
