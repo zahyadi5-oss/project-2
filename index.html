@@ -45,11 +45,9 @@ function connect() {
 
   var clientID = "web_" + Math.floor(Math.random() * 10000);
 
-  client = new Paho.MQTT.Client(
-  "broker.emqx.io",
-  8084,
-  "/mqtt",
-  clientID
+client = new Paho.MQTT.Client(
+  "wss://broker.emqx.io:8084/mqtt",
+  "web_" + Math.random()
 );
 
   client.onConnectionLost = function () {
