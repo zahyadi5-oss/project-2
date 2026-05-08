@@ -2,96 +2,212 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>MQTT EMQX Dashboard</title>
+  <title>MQTT WebSocket Dashboard</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 
   <style>
-    body { font-family: Arial; }
-    #status { background:red; color:white; padding:10px; }
-    #messages { background:yellow; padding:10px; margin-top:10px; }
+    body {
+      font-family: Arial;
+      padding: 20px;
+    }
+
+    input {
+      padding: 6px;
+      margin: 5px 0;
+      width: 300px;
+    }
+
+    button {
+      padding: 8px 12px;
+      margin-top: 5px;
+    }
+
+    #status {
+      background: red;
+      color: white;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    #messages {
+      background: yellow;
+      padding: 10px;
+      margin-top: 10px;
+      min-height: 40px;
+    }
   </style>
 </head>
 
 <body>
 
-<h2>ESP8266 MQTT (EMQX)</h2>
+<h2>MQTT WebSocket Dashboard</h2>
 
-<div id="status">Not Connected</div>
+<!-- MQTT CONFIG -->
+<h3>Broker Config</h3>
+
+Protocol:<br>
+<select id="protocol">
+  <option value="wss">wss</option>
+  <option value="ws">ws</option>
+</select>
+
+<br><br>
+
+Broker Address:<br>
+<input type="text" id="broker" value="broker.emqx.io">
 
 <br>
 
-<button onclick="connect()">Connect</button>
+Port:<br>
+<input type="text" id="port" value="8084">
 
-<br><br>
+<br>
 
-<input id="topic" placeholder="topic (esp/data)">
-<button onclick="subscribe()">Subscribe</button>
+Path:<br>
+<input type="text" id="path" value="/mqtt">
 
-<br><br>
+<br>
 
-<input id="msg" placeholder="message">
-<button onclick="publish()">Send</button>
+<button onclick="connectMQTT()">Connect</button>
 
-<div id="messages">Waiting 3 ...</div>
+<div id="status">Not Connected</div>
+
+<hr>
+
+<!-- SUBSCRIBE -->
+<h3>Subscribe</h3>
+
+<input type="text" id="subtopic" placeholder="topic">
+
+<button onclick="subscribeTopic()">Subscribe</button>
+
+<hr>
+
+<!-- PUBLISH -->
+<h3>Publish</h3>
+
+<input type="text" id="pubtopic" placeholder="topic">
+
+<br>
+
+<input type="text" id="message" placeholder="message">
+
+<br>
+
+<button onclick="publishMessage()">Send</button>
+
+<hr>
+
+<h3>Messages</h3>
+
+<div id="messages">Waiting...</div>
 
 <script>
 
-var client;
-var connected = false;
+let client;
+let connected = false;
 
 // ================= CONNECT =================
-function connect() {
+function connectMQTT() {
 
-  var clientID = "web_" + Math.floor(Math.random() * 10000);
+  const protocol = document.getElementById("protocol").value;
+  const broker = document.getElementById("broker").value;
+  const port = document.getElementById("port").value;
+  const path = document.getElementById("path").value;
 
-client = new Paho.MQTT.Client(
-  "wss://broker.emqx.io:8084/mqtt",
-  "web_" + Math.random()
-);
+  const url =
+    protocol + "://" + broker + ":" + port + path;
 
-  client.onConnectionLost = function () {
+  console.log("Connecting to:", url);
+
+  const clientID =
+    "web_" + Math.floor(Math.random() * 10000);
+
+  client = new Paho.MQTT.Client(url, clientID);
+
+  client.onConnectionLost = function(responseObject) {
+
     connected = false;
-    document.getElementById("status").innerHTML = "Disconnected";
+
+    console.log("Connection Lost");
+
+    document.getElementById("status").innerHTML =
+      "Connection Lost";
   };
 
-  client.onMessageArrived = function (msg) {
+  client.onMessageArrived = function(message) {
+
+    console.log(message.payloadString);
+
     document.getElementById("messages").innerHTML =
-      msg.destinationName + " : " + msg.payloadString;
+      "<b>Topic:</b> " +
+      message.destinationName +
+      "<br><b>Message:</b> " +
+      message.payloadString;
   };
 
   client.connect({
-    onSuccess: function () {
+
+    useSSL: (protocol === "wss"),
+
+    onSuccess: function() {
+
       connected = true;
-      document.getElementById("status").innerHTML = "Connected to EMQX";
+
       console.log("CONNECTED");
+
+      document.getElementById("status").innerHTML =
+        "Connected to " + broker;
     },
-    onFailure: function (err) {
+
+    onFailure: function(err) {
+
       console.log("FAILED:", err);
+
+      document.getElementById("status").innerHTML =
+        "Connection Failed";
     }
   });
 }
 
 // ================= SUBSCRIBE =================
-function subscribe() {
-  if (!connected) return alert("Not connected");
+function subscribeTopic() {
 
-  var t = document.getElementById("topic").value;
-  client.subscribe(t);
-  console.log("Subscribed:", t);
+  if (!connected) {
+    alert("Not connected");
+    return;
+  }
+
+  const topic =
+    document.getElementById("subtopic").value;
+
+  client.subscribe(topic);
+
+  console.log("Subscribed:", topic);
 }
 
 // ================= PUBLISH =================
-function publish() {
-  if (!connected) return alert("Not connected");
+function publishMessage() {
 
-  var msg = document.getElementById("msg").value;
-  var topic = document.getElementById("topic").value;
+  if (!connected) {
+    alert("Not connected");
+    return;
+  }
 
-  var message = new Paho.MQTT.Message(msg);
+  const topic =
+    document.getElementById("pubtopic").value;
+
+  const msg =
+    document.getElementById("message").value;
+
+  const message = new Paho.MQTT.Message(msg);
+
   message.destinationName = topic;
 
   client.send(message);
+
+  console.log("Sent:", msg);
 }
 
 </script>
